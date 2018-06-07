@@ -1,2 +1,2 @@
-# pwDSGVOCookieLayer
-A module to display a DSGVO Cookie-Layer on the Processwire Page.
+# 🍪 Processwire DSGVO Cookie-Layer
+A simple Processwire module to display a DSGVO Cookie-Layer on the frontend.

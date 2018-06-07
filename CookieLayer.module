@@ -20,7 +20,7 @@ class CookieLayer extends WireData implements Module, ConfigurableModule {
 			'title' => 'DSGVO Cookie Layer', 
 			'version' => 1, 
 			'summary' => 'Display the DSGVO Cookie Layer on the page.',
-			'href' => 'https://processwire.com',
+			'href' => 'https://github.com/pixelschiff/pwDSGVOCookieLayer',
 			'singular' => true, 
 			'autoload' => true, 
 			'icon' => 'certificate', 
