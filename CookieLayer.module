@@ -1,0 +1,121 @@
+<?php namespace ProcessWire;
+
+/**
+ * ProcessWire 'DSGVO Cookie Layer' module
+ *
+ * This file is licensed under the MIT license
+ * https://processwire.com/about/license/mit/
+ * 
+ */
+
+class CookieLayer extends WireData implements Module, ConfigurableModule {
+
+	/**
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+
+		return array(
+			'title' => 'DSGVO Cookie Layer', 
+			'version' => 1, 
+			'summary' => 'Display the DSGVO Cookie Layer on the page.',
+			'href' => 'https://processwire.com',
+			'singular' => true, 
+			'autoload' => true, 
+			'icon' => 'certificate', 
+			);
+	}
+
+	public function init() {
+		$this->addHookAfter('Page::render', $this, 'displayLayer'); 
+		$this->addHookAfter('Page::render', $this, 'styling'); 
+	}
+
+	public function execute() {
+		// will return configured value, or 'renobird' if not yet configured
+		return $this->cookieText; 
+	}
+
+	const defaultValue = 'We use cookies to make our website more userfriendly and improve it. If you continue using the website, you agree to the use of cookies.';
+	const defaultName = 'pwDSGVOCookieAccepted';
+	const defaultLT = 1;
+
+	public function __construct() {
+		$this->set('cookieText', self::defaultValue);
+		$this->set('cookieName', self::defaultName);
+		$this->set('cookieLT', self::defaultLT);
+	}
+
+	public static function getModuleConfigInputfields(array $data) {
+		// if cookieText isn't yet in $data, put our default value in there
+		if(!isset($data['cookieText'])) $data['cookieText'] = self::defaultValue;
+		if(!isset($data['cookieName'])) $data['cookieName'] = self::defaultName;
+		if(!isset($data['cookieLT'])) $data['cookieLT'] = self::defaultLT;
+
+		$form = new InputfieldWrapper();
+		$f = wire('modules')->get('InputfieldCKEditor');
+		$f->name = 'cookieText'; 
+		$f->label = 'Enter the text to display inside the layer'; 
+		$f->value = $data['cookieText'];
+		$form->add($f);
+
+		$f = wire('modules')->get('InputfieldText');
+		$f->name = 'cookieName'; 
+		$f->label = 'Enter the name of the stored cookie for the layer'; 
+		$f->value = $data['cookieName'];
+		$form->add($f);
+
+		$f = wire('modules')->get('InputfieldText');
+		$f->name = 'cookieLT'; 
+		$f->label = 'Enter days of lifetime for the cookie'; 
+		$f->value = $data['cookieLT'];
+		$form->add($f);
+
+		return $form; 
+	}
+
+	/**
+	 * @param HookEvent $event
+	 *
+	 */
+	public function displayLayer($event) {
+		/** @var Page $page */
+		$page = $event->object; 
+
+		if($page->template == 'admin') return;
+
+		$cookie_name = $this->cookieName;
+		$cookie_value = "accepted";
+
+		$lifetime = 86400 * $this->cookieLT;
+
+		setcookie($cookie_name, $cookie_value, time() + ($lifetime), "/");
+		
+		if(isset($_COOKIE[$cookie_name])) {
+			return;
+		}
+
+		$css = $this->config->urls->$this . "style.css";
+		$js = $this->config->urls->$this . "main.js";
+
+		$code = '<script src="'.$js.'"></script>';
+		$code .= "<div class='cookieLayer' id='cookieLayer'>".$this->cookieText."<span class='cookieLayerClose' onclick='hideCookieLayer()'></span></div></body>";
+
+		$event->return = str_replace("</body>", $code, $event->return); 
+	}
+
+	/**
+	 * @param HookEvent $event
+	 *
+	 */
+	public function styling($event) {
+		/** @var Page $page */
+		$page = $event->object; 
+
+		if($page->template == 'admin') return;
+
+		$css = $this->config->urls->$this . "style.css";
+		$event->return = str_replace("</head>", "<link rel='stylesheet' type='text/css' href='{$css}'/>\n</head>", $event->return);
+	}
+}
